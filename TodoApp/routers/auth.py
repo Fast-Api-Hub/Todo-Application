@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
@@ -13,19 +13,23 @@ from models import Users
 
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jose import jwt
+from jose import jwt, JWTError
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/auth",
+    tags=["auth"]
+)
 
 load_dotenv()
-SECRET_KEY =  getenv("SECRET_KEY")
+SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = getenv("ALGORITHM")
 
 print(SECRET_KEY)
 print(ALGORITHM)
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oath2_bearer = OAuth2PasswordBearer(tokenUrl="token")
+oath2_bearer = OAuth2PasswordBearer(tokenUrl="auth/token")
+
 
 class CreateUserRequest(BaseModel):
     id: int
@@ -73,12 +77,18 @@ def create_access_toke(username: str, user_id: int, expires_delta: timedelta):
 async def get_current_user(token: Annotated[str, Depends(oath2_bearer)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except:
-        pass
+        username: str = payload.get("sub")
+        user_id: int = payload.get("id")
+        if username is None or user_id is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+
+        return {"username": username, "id": user_id}
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
 
 # POST Request
-@router.post("/auth/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(db: db_dependency,
                       create_user_req: CreateUserRequest):
     create_user_model = Users(
@@ -100,7 +110,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
                                  db: db_dependency):
     user: Users = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        return "Failed authentication"
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
 
     token = create_access_toke(user.username, user.id, timedelta(minutes=2))
     return {"access_token": token, "token_type": "bearer"}
