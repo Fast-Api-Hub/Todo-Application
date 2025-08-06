@@ -1,3 +1,4 @@
+from os import environ
 from datetime import timedelta, datetime, timezone
 from typing import Annotated
 
@@ -10,16 +11,16 @@ from database import SessionLocal
 from models import Users
 
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt
 
 router = APIRouter()
 
-SECRET_KEY = "fbcf98508ce709ea79906297350aff2511898431662dfdeb4aae3606123f2782"
-ALGORITHM = "HS256"
+SECRET_KEY =  environ.get("SECRET_KEY")
+ALGORITHM = environ.get("ALGORITHM")
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
+oath2_bearer = OAuth2PasswordBearer(tokenUrl="token")
 
 class CreateUserRequest(BaseModel):
     id: int
@@ -62,6 +63,13 @@ def create_access_toke(username: str, user_id: int, expires_delta: timedelta):
         "sub": username, "id": user_id, "exp": datetime.now(timezone.utc) + expires_delta,
     }
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+async def get_current_user(token: Annotated[str, Depends(oath2_bearer)]):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except:
+        pass
 
 
 # POST Request
