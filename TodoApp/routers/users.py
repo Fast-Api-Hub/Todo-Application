@@ -4,8 +4,8 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 from starlette import status
 
-from models import Users
-from database import SessionLocal
+from ..models import Users
+from ..database import SessionLocal
 
 from fastapi import Depends, HTTPException,APIRouter
 from sqlalchemy.orm import Session

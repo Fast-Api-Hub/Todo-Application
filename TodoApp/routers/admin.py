@@ -3,8 +3,8 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 from starlette import status
 
-from models import Todos, Users
-from database import SessionLocal
+from ..models import Todos, Users
+from ..database import SessionLocal
 
 from fastapi import Depends, HTTPException, Path, APIRouter
 from sqlalchemy.orm import Session
