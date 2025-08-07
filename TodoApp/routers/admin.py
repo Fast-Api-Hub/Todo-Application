@@ -11,10 +11,7 @@ from sqlalchemy.orm import Session
 
 from .auth import get_current_user
 
-router = APIRouter(
-    prefix="/admin",
-    tags=["admin"]
-)
+router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 def get_db():
@@ -28,6 +25,7 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
+
 # GET Request
 @router.get("/todo", status_code=status.HTTP_200_OK)
 async def read_all(user: user_dependency, db: db_dependency):
@@ -35,6 +33,7 @@ async def read_all(user: user_dependency, db: db_dependency):
         raise HTTPException(status_code=401, detail="Authentication failed.")
 
     return db.query(Todos).all()
+
 
 # DELETE Request
 @router.delete("/todo/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)

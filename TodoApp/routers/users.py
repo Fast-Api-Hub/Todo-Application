@@ -1,4 +1,3 @@
-
 from typing import Annotated
 
 from pydantic import BaseModel, Field
@@ -7,16 +6,13 @@ from starlette import status
 from ..models import Users
 from ..database import SessionLocal
 
-from fastapi import Depends, HTTPException,APIRouter
+from fastapi import Depends, HTTPException, APIRouter
 from sqlalchemy.orm import Session
 
 from .auth import get_current_user
 from passlib.context import CryptContext
 
-router = APIRouter(
-    prefix="/users",
-    tags=["users"]
-)
+router = APIRouter(prefix="/users", tags=["users"])
 
 
 def get_db():
@@ -36,6 +32,7 @@ class UserVerification(BaseModel):
     password: str
     new_password: str = Field(min_length=3)
 
+
 @router.get("/", status_code=status.HTTP_200_OK)
 async def get_user(user: user_dependency, db: db_dependency, user_id: int):
     if user is None:
@@ -50,8 +47,9 @@ async def get_user(user: user_dependency, db: db_dependency, user_id: int):
 
 
 @router.put("/password", status_code=status.HTTP_204_NO_CONTENT)
-async def change_password(user: user_dependency, db: db_dependency,
-                          user_verification: UserVerification):
+async def change_password(
+    user: user_dependency, db: db_dependency, user_verification: UserVerification
+):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
@@ -60,16 +58,23 @@ async def change_password(user: user_dependency, db: db_dependency,
     if user_model is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    elif not bcrypt_context.verify(user_verification.password, user_model.hashed_password):
+    elif not bcrypt_context.verify(
+        user_verification.password, user_model.hashed_password
+    ):
         raise HTTPException(status_code=401, detail="Error on password change")
 
     user_model.hashed_password = bcrypt_context.hash(user_verification.new_password)
     db.add(user_model)
     db.commit()
 
+
 @router.put("/phonenumber/{phone_number}", status_code=status.HTTP_204_NO_CONTENT)
-async def change_phone_number(user: user_dependency, db: db_dependency,
-                              user_verification: UserVerification, new_number: str):
+async def change_phone_number(
+    user: user_dependency,
+    db: db_dependency,
+    user_verification: UserVerification,
+    new_number: str,
+):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
@@ -78,7 +83,9 @@ async def change_phone_number(user: user_dependency, db: db_dependency,
     if user_model is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    elif not bcrypt_context.verify(user_verification.password, user_model.hashed_password):
+    elif not bcrypt_context.verify(
+        user_verification.password, user_model.hashed_password
+    ):
         raise HTTPException(status_code=401, detail="Error on password change")
 
     user_model.phone_number = new_number

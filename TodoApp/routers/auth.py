@@ -15,10 +15,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["auth"]
-)
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 load_dotenv()
 SECRET_KEY = getenv("SECRET_KEY")
@@ -65,9 +62,13 @@ def authenticate_user(username: str, password: str, db):
     return user
 
 
-def create_access_toke(username: str, user_id: int, role: str, expires_delta: timedelta):
+def create_access_toke(
+    username: str, user_id: int, role: str, expires_delta: timedelta
+):
     encode = {
-        "sub": username, "id": user_id, "role": role,
+        "sub": username,
+        "id": user_id,
+        "role": role,
         "exp": datetime.now(timezone.utc) + expires_delta,
     }
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -80,17 +81,22 @@ async def get_current_user(token: Annotated[str, Depends(oath2_bearer)]):
         user_id: int = payload.get("id")
         user_role: str = payload.get("role")
         if username is None or user_id is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
 
         return {"username": username, "id": user_id, "user_role": user_role}
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
 
 
 # POST Request
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(db: db_dependency,
-                      create_user_req: CreateUserRequest):
+async def create_user(db: db_dependency, create_user_req: CreateUserRequest):
     create_user_model = Users(
         emails=create_user_req.email,
         username=create_user_req.username,
@@ -107,11 +113,15 @@ async def create_user(db: db_dependency,
 
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                                 db: db_dependency):
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency
+):
     user: Users = authenticate_user(form_data.username, form_data.password, db)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
 
     token = create_access_toke(user.username, user.id, user.role, timedelta(minutes=2))
     return {"access_token": token, "token_type": "bearer"}
