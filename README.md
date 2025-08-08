@@ -3,6 +3,8 @@ Todo Application leveraging the capabilities of FastAPI
 
 ![img.png](img/diagram.png)
 
+![img.png](img/docs_snapsho.png)
+
 For this project I built a simple todo application to become more familiar with FastAPI.
 - Fast API was used for creating API routes and interactions
 - SQLAlchemy handled various DB connections and interactions
