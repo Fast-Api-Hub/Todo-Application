@@ -3,19 +3,6 @@ from ..routers.todos import get_db, get_current_user
 
 from fastapi import status
 
-
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def override_get_current_user():
-    return {"username": "user", "id": 1, "user_role": "admin"}
-
-
 app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_user] = override_get_current_user
 

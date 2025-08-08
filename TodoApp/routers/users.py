@@ -34,11 +34,11 @@ class UserVerification(BaseModel):
 
 
 @router.get("/", status_code=status.HTTP_200_OK)
-async def get_user(user: user_dependency, db: db_dependency, user_id: int):
+async def get_user(user: user_dependency, db: db_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
-    user_model = db.query(Users).filter(Users.id == user_id).first()
+    user_model = db.query(Users).filter(Users.id == user.get("id")).first()
 
     if user_model is not None:
         return user_model
@@ -72,22 +72,12 @@ async def change_password(
 async def change_phone_number(
     user: user_dependency,
     db: db_dependency,
-    user_verification: UserVerification,
-    new_number: str,
+    phone_number: str,
 ):
     if user is None:
         raise HTTPException(status_code=401, detail="Authentication Failed")
 
     user_model = db.query(Users).filter(Users.id == user.get("id")).first()
-
-    if user_model is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    elif not bcrypt_context.verify(
-        user_verification.password, user_model.hashed_password
-    ):
-        raise HTTPException(status_code=401, detail="Error on password change")
-
-    user_model.phone_number = new_number
+    user_model.phone_number = phone_number
     db.add(user_model)
     db.commit()
